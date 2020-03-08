@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{RidgePlot}
 \alias{RidgePlot}
-\title{Single cell ridge plot (Modified version)}
+\title{Single cell ridge plot}
 \usage{
 RidgePlot(
   object,
@@ -12,22 +12,20 @@ RidgePlot(
   sort = FALSE,
   assay = NULL,
   group.by = NULL,
-  x.lab = NULL,
-  y.lab = NULL,
-  check.italic = FALSE,
-  do.bold = TRUE,
-  plot.title.size = NULL,
-  line.size = 0.5,
-  axis.title.size = NULL,
-  axis.ticks.size = NULL,
-  axis.text.size = NULL,
   y.max = NULL,
   same.y.lims = FALSE,
   log = FALSE,
   ncol = NULL,
-  combine = c("CombinePlots", "patchwork", "None"),
+  x.lab = NULL,
+  y.lab = NULL,
+  do.italic = FALSE,
+  do.bold = TRUE,
+  line.size = 0.5,
+  axis.title.size = NULL,
+  axis.ticks.size = NULL,
+  axis.text.size = NULL,
   slot = "data",
-  ...
+  combine = TRUE
 )
 }
 \arguments{
@@ -47,18 +45,6 @@ expression of the attribute being potted, can also pass 'increasing' or 'decreas
 
 \item{group.by}{Group (color) cells in different ways (for example, orig.ident)}
 
-\item{x.lab}{Title of x axis}
-
-\item{y.lab}{Title of y axis}
-
-\item{check.italic}{Whether or not to use italic text on gene names}
-
-\item{do.bold}{Whether or not to use bold font on plot title}
-
-\item{plot.title.size, axis.title.size, axis.ticks.size, axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
-
-\item{line.size}{Size of axis line}
-
 \item{y.max}{Maximum y axis value}
 
 \item{same.y.lims}{Set all the y-axis limits to the same values}
@@ -67,13 +53,32 @@ expression of the attribute being potted, can also pass 'increasing' or 'decreas
 
 \item{ncol}{Number of columns if multiple plots are displayed}
 
-\item{combine}{Combine plots using cowplot::plot_grid or patchwork package. If set 'None', will return a list of ggplot objects.}
+\item{x.lab}{Title of x axis}
+
+\item{y.lab}{Title of y axis}
+
+\item{do.italic}{Whether or not to use italic text on gene names}
+
+\item{do.bold}{Whether or not to use bold font on plot title}
+
+\item{line.size}{Size of axis line}
+
+\item{axis.title.size, axis.ticks.size, axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
 
 \item{slot}{Use non-normalized counts data for plotting}
 
-\item{...}{Extra parameters passed on to \code{\link{CombinePlots}}}
+\item{combine}{Combine plots into a single \code{\link[patchwork]{patchwork}ed}
+ggplot object. If \code{FALSE}, return a list of ggplot objects}
+}
+\value{
+A \code{\link[patchwork]{patchwork}ed} ggplot object if
+\code{combine = TRUE}; otherwise, a list of ggplot objects
 }
 \description{
 Draws a ridge plot of single cell data (gene expression, metrics, PC
 scores, etc.)
+}
+\examples{
+RidgePlot(object = pbmc_small, features = 'PC_1')
+
 }

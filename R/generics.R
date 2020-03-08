@@ -15,31 +15,30 @@
 #' @rdname CalculateCutOff
 #' @export CalculateCutOff
 #'
-CalculateCutOff <- function (object, ...)
-{
+CalculateCutOff <- function (object, ...) {
   UseMethod(generic = 'CalculateCutOff', object = object)
 }
 
-#' Regress out technical effects and cell cycle using regularized Negative Binomial regression (old Seurat function)
-#'
-#' Remove unwanted effects from umi data and set scale.data to Pearson residuals
-#' Uses future_lapply; you can set the number of cores it will use to n with plan(strategy = 'multicore', workers = n).
-#' If n.features is set, only a (somewhat-random) subset of features is used for estimating the initial model parameters.
-#'
-#' @param object An object
-#' @param ... Arguments passed to other methods
-#'
-#' @return Returns a Seurat object with pearson residuals. Intermediate results are saved in a misc slot
-#'
-#' @references Mayer, C., Hafemeister, C., Bandler, R. C., Machold, R., Batista Brito, R., Jaglin, X., … Satija, R. (2018). Developmental diversification of cortical inhibitory interneurons. Nature, 555(7697), 457–462. https://doi.org/10.1038/nature25999
-#'
-#' @rdname RegressOutNBreg
-#' @export RegressOutNBreg
-#'
-RegressOutNBreg <- function (object, ...)
-{
-  UseMethod(generic = 'RegressOutNBreg', object = object)
-}
+#
+# #' Regress out technical effects and cell cycle using regularized Negative Binomial regression (old Seurat function)
+# #'
+# #' Remove unwanted effects from umi data and set scale.data to Pearson residuals
+# #' Uses future_lapply; you can set the number of cores it will use to n with plan(strategy = 'multicore', workers = n).
+# #' If n.features is set, only a (somewhat-random) subset of features is used for estimating the initial model parameters.
+# #'
+# #' @param object An object
+# #' @param ... Arguments passed to other methods
+# #'
+# #' @return Returns a Seurat object with pearson residuals. Intermediate results are saved in a misc slot
+# #'
+# #' @references Mayer, C., Hafemeister, C., Bandler, R. C., Machold, R., Batista Brito, R., Jaglin, X., … Satija, R. (2018). Developmental diversification of cortical inhibitory interneurons. Nature, 555(7697), 457–462. https://doi.org/10.1038/nature25999
+# #'
+# #' @rdname RegressOutNBreg
+# #' @export RegressOutNBreg
+# #'
+# RegressOutNBreg <- function (object, ...) {
+#   UseMethod(generic = 'RegressOutNBreg', object = object)
+# }
 
 # Dimensional reduction ---------------------------
 
@@ -58,8 +57,7 @@ RegressOutNBreg <- function (object, ...)
 #' @rdname RunDiffusion
 #' @export RunDiffusion
 #'
-RunDiffusion <- function (object, ...)
-{
+RunDiffusion <- function (object, ...) {
   UseMethod(generic = 'RunDiffusion', object = object)
 }
 

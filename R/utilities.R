@@ -87,7 +87,8 @@ CellCycleEnrichScore <- function(
   g2m.features = NULL,
   min.cells = 3,
   N = 100,
-  seed = 42) {
+  seed = 42
+) {
   set.seed(seed)
   if (is.null(s.features) | is.null(g2m.features)) {
     stop('No available cell-cycle features.')

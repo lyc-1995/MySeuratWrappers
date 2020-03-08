@@ -192,7 +192,8 @@ RegressOutNBreg.Seurat <- function(
   variable.features.n = 2000,
   variable.features.z.th = 1,
   return.variable.features = FALSE,
-  ...) {
+  ...
+) {
   assay <- assay %||% DefaultAssay(object = object)
   cells <- cells %||% colnames(object[[assay]])
   latent.data <- object@meta.data[cells, latent.var, drop = FALSE]

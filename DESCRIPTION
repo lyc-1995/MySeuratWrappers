@@ -10,7 +10,7 @@ Depends:
     dplyr,
     methods,
     reticulate,
-    Seurat (>= 3.1.1),
+    Seurat (>= 3.1.4),
     tidyr
 Imports:
     BiocManager,
@@ -22,7 +22,9 @@ Imports:
     ggridges,
     MASS,
     patchwork,
+    RColorBrewer,
     remotes,
+    rlang,
     scales,
     stats,
     stringr,
@@ -36,8 +38,6 @@ Collate:
     'clustering.R'
     'dimensional_reduction.R'
     'generics.R'
-    'preprocess.R'
     'quality_control.R'
     'utilities.R'
     'visualization.R'
-    'wrappers.R'

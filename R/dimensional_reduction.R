@@ -18,8 +18,9 @@ RunDiffusion.matrix <- function (
   assay = NULL,
   dim.embed = 2,
   q = 0.01,
-  reduction.key = "DMC_", ...)
-{
+  reduction.key = "DMC_",
+  ...
+) {
   if (!"destiny" %in% rownames(x = installed.packages())) {
     stop("Please install destiny - learn more at https://bioconductor.org/packages/release/bioc/html/destiny.html")
   }
@@ -99,8 +100,7 @@ RunDiffusion.Seurat <- function (
   reduction.name = "diffusionmap",
   reduction.key = "DMC_",
   ...
-)
-{
+) {
   cells <- cells %||% Cells(x = object)
   if (!normalize.method == "SCTransform") {
     normalize.method <- "LogNormalize"

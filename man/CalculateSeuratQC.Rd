@@ -13,7 +13,7 @@ CalculateSeuratQC(
   control.feature.list = NULL,
   use.names = FALSE,
   symbol.to.id = NULL,
-  do.log10 = TRUE
+  log10 = TRUE
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ CalculateSeuratQC(
 
 \item{symbol.to.id}{Data.frame for convertion from gene symbols to such as ENSEMBL ID, must contain at least two columns (use 'ID' and 'Symbol' as colnames)}
 
-\item{do.log10}{Whether or not to calculate log10 transformed QC metrics}
+\item{log10}{Whether or not to calculate log10 transformed QC metrics}
 }
 \value{
 Returns Seurat object with new meta.data storing QC metrics

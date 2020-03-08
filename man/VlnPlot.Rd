@@ -2,7 +2,7 @@
 % Please edit documentation in R/visualization.R
 \name{VlnPlot}
 \alias{VlnPlot}
-\title{Single cell violin plot (Modified version)}
+\title{Single cell violin plot}
 \usage{
 VlnPlot(
   object,
@@ -14,24 +14,22 @@ VlnPlot(
   assay = NULL,
   group.by = NULL,
   split.by = NULL,
-  x.lab = NULL,
-  y.lab = NULL,
-  check.italic = FALSE,
-  do.bold = TRUE,
-  plot.title.size = NULL,
-  line.size = 0.5,
-  axis.title.size = NULL,
-  axis.ticks.size = NULL,
-  axis.text.size = NULL,
   adjust = 1,
   y.max = NULL,
   same.y.lims = FALSE,
   log = FALSE,
   ncol = NULL,
-  combine = c("CombinePlots", "patchwork", "None"),
-  direction = c("vertical", "horizontal"),
   slot = "data",
-  ...
+  x.lab = NULL,
+  y.lab = NULL,
+  do.italic = FALSE,
+  do.bold = TRUE,
+  line.size = 0.5,
+  axis.title.size = NULL,
+  axis.ticks.size = NULL,
+  axis.text.size = NULL,
+  multi.group = FALSE,
+  combine = TRUE
 )
 }
 \arguments{
@@ -53,26 +51,7 @@ expression of the attribute being potted, can also pass 'increasing' or 'decreas
 
 \item{group.by}{Group (color) cells in different ways (for example, orig.ident)}
 
-\item{split.by}{A variable to split the violin plots by,
-see \code{\link{FetchData}} for more details}
-
-\item{x.lab}{Title of x axis}
-
-\item{y.lab}{Title of y axis}
-
-\item{check.italic}{Whether or not to use italic text on gene names}
-
-\item{do.bold}{Whether or not to use bold font on plot title}
-
-\item{plot.title.size}{Parameters about axis to be passed to \code{\link{theme}}}
-
-\item{line.size}{Size of axis line}
-
-\item{axis.title.size}{Parameters about axis to be passed to \code{\link{theme}}}
-
-\item{axis.ticks.size}{Parameters about axis to be passed to \code{\link{theme}}}
-
-\item{axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
+\item{split.by}{A variable to split the violin plots by,}
 
 \item{adjust}{Adjust parameter for geom_violin}
 
@@ -84,17 +63,42 @@ see \code{\link{FetchData}} for more details}
 
 \item{ncol}{Number of columns if multiple plots are displayed}
 
-\item{combine}{Combine plots using cowplot::plot_grid or patchwork package. If set 'None', will return a list of ggplot objects.}
-
-\item{direction}{Direction of violin plot, option can be "vertical" (default) or "horizontal".}
-
 \item{slot}{Use non-normalized counts data for plotting}
 
-\item{...}{Extra parameters passed on to \code{\link{CombinePlots}}}
+\item{x.lab}{Title of x axis}
+
+\item{y.lab}{Title of y axis}
+
+\item{do.italic}{Whether or not to use italic text on gene names}
+
+\item{do.bold}{Whether or not to use bold font on plot title}
+
+\item{line.size}{Size of axis line}
+
+\item{axis.title.size}{Parameters about axis to be passed to \code{\link{theme}}}
+
+\item{axis.ticks.size}{Parameters about axis to be passed to \code{\link{theme}}}
+
+\item{axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
+
+\item{multi.group}{plot each group of the split violin plots by multiple or single violin shapes
+see \code{\link{FetchData}} for more details}
+
+\item{combine}{Combine plots into a single \code{\link[patchwork]{patchwork}ed}
+ggplot object. If \code{FALSE}, return a list of ggplot objects}
+}
+\value{
+A \code{\link[patchwork]{patchwork}ed} ggplot object if
+\code{combine = TRUE}; otherwise, a list of ggplot objects
 }
 \description{
 Draws a violin plot of single cell data (gene expression, metrics, PC
-scores, etc.).
+scores, etc.)
+}
+\examples{
+VlnPlot(object = pbmc_small, features = 'PC_1')
+VlnPlot(object = pbmc_small, features = 'LYZ', split.by = 'groups')
+
 }
 \seealso{
 \code{\link{FetchData}}

@@ -113,112 +113,67 @@ EnrichScore <- function(expr, features, bg.list) {
   return((features.mean - apply(bg.mean, 1, mean)) / apply(bg.mean, 1, sd))
 }
 
-# AlignCCA -----------------------------------------------------------------
-
-# bicor helper function to standardize the two vectors and perform common
-# calculations.
+# # AlignCCA -----------------------------------------------------------------
 #
-# @author Patrick Roelli
-# @param x Vector to prep
-# @param verbose If TRUE, prints a warning when falling back on robust
-# standardization when MAD(x) is 0.
-#
-# @return returns the prepped vector
-#
-BicorPrep <- function(x, verbose = FALSE){
-  if (stats::mad(x) == 0) {
-    if (verbose){
-      warning('mad == 0, using robust standardization')
-    }
-    xat <- x - mean(x = x)
-    xab <- sqrt(x = sum((x - mean(x = x)) ^ 2))
-    result <- xat / xab
-    return (result)
-  } else {
-    ua <- (x - stats::median(x = x)) /
-      (9 * stats::mad(x = x) *
-         stats::qnorm(p = 0.75))
-    i.x <- ifelse(test = ua <= -1 | ua >= 1, yes = 0, no = 1)
-    wax <- ((1 - (ua ^ 2)) ^ 2) * i.x
-    xat <- (x - stats::median(x = x)) * wax
-    xab <- sqrt(x = sum(xat ^ 2))
-    result <- xat / xab
-    return(result)
-  }
-}
-
-# Calculate the biweight midcorrelation (bicor) of two vectors using
-# implementation described in Langfelder, J Stat Sotfw. 2012. If MAD of one of
-# the two vectors is 0, falls back on robust standardization.
-#
-# @author Patrick Roelli
-# @param x First vector
-# @param y Second vector
-#
-# @return returns the biweight midcorrelation of x and y
-#
-BiweightMidcor <- function(x, y){
-  resx <- BicorPrep(x)
-  resy <- BicorPrep(y)
-  result <- sum(resx * resy)
-  return(result)
-}
-
-# Calculate position along a defined reference range for a given vector of numerics. Will range from 0 to 1.
-#
-# @param x      Vector of numeric type
-# @param lower  Lower end of reference range
-# @param upper  Upper end of reference range
-#
-#' @importFrom stats quantile
-#
-# @return       Returns a vector that describes the position of each element in x along the defined reference range
-ReferenceRange <- function(x, lower = 0.025, upper = 0.975) {
-  return((x - quantile(x = x, probs = lower)) /
-           (quantile(x = x, probs = upper) - quantile(x = x, probs = lower)))
-}
-
-# # DoubletFinder -----------------------------------------------------------------
-#
-# # Check if the two objects are different
+# # bicor helper function to standardize the two vectors and perform common
+# # calculations.
 # #
-# # @param object1,object1 the two objects to compare
+# # @author Patrick Roelli
+# # @param x Vector to prep
+# # @param verbose If TRUE, prints a warning when falling back on robust
+# # standardization when MAD(x) is 0.
 # #
-# CheckDiff <- function(object1, object2) {
-#   if (is.null(object1) & is.null(object2)) {
-#     check <- FALSE
-#   } else if (is.null(object1) != is.null(object2)) {
-#     check <- TRUE
-#   } else if (!is.null(object1) & !is.null(object2)) {
-#     check <- object1 != object2
+# # @return returns the prepped vector
+# #
+# BicorPrep <- function(x, verbose = FALSE){
+#   if (stats::mad(x) == 0) {
+#     if (verbose){
+#       warning('mad == 0, using robust standardization')
+#     }
+#     xat <- x - mean(x = x)
+#     xab <- sqrt(x = sum((x - mean(x = x)) ^ 2))
+#     result <- xat / xab
+#     return (result)
+#   } else {
+#     ua <- (x - stats::median(x = x)) /
+#       (9 * stats::mad(x = x) *
+#          stats::qnorm(p = 0.75))
+#     i.x <- ifelse(test = ua <= -1 | ua >= 1, yes = 0, no = 1)
+#     wax <- ((1 - (ua ^ 2)) ^ 2) * i.x
+#     xat <- (x - stats::median(x = x)) * wax
+#     xab <- sqrt(x = sum(xat ^ 2))
+#     result <- xat / xab
+#     return(result)
 #   }
-#   return(check)
 # }
 #
-# # Retrive SCTransform arguments
+# # Calculate the biweight midcorrelation (bicor) of two vectors using
+# # implementation described in Langfelder, J Stat Sotfw. 2012. If MAD of one of
+# # the two vectors is 0, falls back on robust standardization.
 # #
-# # @param object Seurat object
+# # @author Patrick Roelli
+# # @param x First vector
+# # @param y Second vector
 # #
-# # @return returns a list of SCTransform arguments
+# # @return returns the biweight midcorrelation of x and y
 # #
-# SCTArgs <- function(object) {
-#   orig.commands <- object@commands
-#   sct.check <- grep(pattern = 'SCTransform.RNA', x = Command(object = object), value = TRUE)
-#   if (length(x = sct.check) == 0) {
-#     stop('The provided object has not been processed with SCTransform')
-#   }
-#   sct.args <- orig.commands[[sct.check]]@params
-#   sct.used <- c('do.correct.umi', 'variable.features.n', 'variable.features.rv.th', 'seed.use', 'return.only.var.genes')
-#   sct.used <- sct.used[sct.used %in% names(x = sct.args)]
-#   sct.args <- sct.args[sct.used]
-#
-#   sct.assay <- orig.commands[[sct.check]]$new.assay.name
-#   vst.args <- Misc(object = object[[sct.assay]])[['vst.out']][['arguments']]
-#   vst.used <- c('latent_var', 'latent_var_nonreg', 'n_genes', 'min_cells', 'method', 'do_regularize', 'residual_type', 'bin_size', 'bw_adjust', 'gmean_eps')
-#   vst.used <- vst.used[vst.used %in% names(x = vst.args)]
-#   vst.args <- vst.args[vst.used]
-#
-#   sct.command <- c(sct.args, vst.args)
-#   return(sct.command)
+# BiweightMidcor <- function(x, y){
+#   resx <- BicorPrep(x)
+#   resy <- BicorPrep(y)
+#   result <- sum(resx * resy)
+#   return(result)
 # }
-
+#
+# # Calculate position along a defined reference range for a given vector of numerics. Will range from 0 to 1.
+# #
+# # @param x      Vector of numeric type
+# # @param lower  Lower end of reference range
+# # @param upper  Upper end of reference range
+# #
+# #' @importFrom stats quantile
+# #
+# # @return       Returns a vector that describes the position of each element in x along the defined reference range
+# ReferenceRange <- function(x, lower = 0.025, upper = 0.975) {
+#   return((x - quantile(x = x, probs = lower)) /
+#            (quantile(x = x, probs = upper) - quantile(x = x, probs = lower)))
+# }

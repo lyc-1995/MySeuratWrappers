@@ -14,7 +14,7 @@ NULL
 #' @param control.feature.list A list containing one or more vectors (a character vector of ensembl IDs named by feature symbols), used to identify feature controls
 #' @param use.names Whether or not to use feature names instead of ID. If FALSE, shall specify symbol.to.id data.frame for transferation
 #' @param symbol.to.id Data.frame for convertion from gene symbols to such as ENSEMBL ID, must contain at least two columns (use 'ID' and 'Symbol' as colnames)
-#' @param do.log10 Whether or not to calculate log10 transformed QC metrics
+#' @param log10 Whether or not to calculate log10 transformed QC metrics
 #'
 #' @importFrom Seurat DefaultAssay AddMetaData
 #'
@@ -31,7 +31,7 @@ CalculateSeuratQC <- function(
   control.feature.list = NULL,
   use.names = FALSE,
   symbol.to.id = NULL,
-  do.log10 = TRUE
+  log10 = TRUE
 ) {
   assay <- assay %||% DefaultAssay(object)
   new.meta.data <- data.frame(row.names = colnames(object))
@@ -58,7 +58,7 @@ CalculateSeuratQC <- function(
     }
   }
   new.meta.data[['umi.per.gene']] <- new.meta.data[['nCount']] / new.meta.data[['nFeature']]
-  if (do.log10) {
+  if (log10) {
     log10.new.meta.data <- log10(new.meta.data)
     colnames(log10.new.meta.data) <- paste0('log10.', colnames(new.meta.data))
     new.meta.data <- cbind(new.meta.data, log10.new.meta.data)
@@ -91,7 +91,7 @@ CalculateSeuratQC <- function(
       object <- AddMetaData(object, metadata = total[[j]], col.name = paste0('total.', names(control.feature.list[j]), '_', assay))
       object <- AddMetaData(object, metadata = percent[[j]], col.name = paste0('percent.', names(control.feature.list[j]), '_', assay))
     }
-    if (do.log10) {
+    if (log10) {
       log10.total <- lapply(total, log10)
       for (j in 1:length(control.feature.list)) {
         object <- AddMetaData(object, metadata = log10.total[[j]], col.name = paste0('log10.total.', names(control.feature.list[j]), '_', assay))

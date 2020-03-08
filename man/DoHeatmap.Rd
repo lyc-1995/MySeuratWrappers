@@ -79,8 +79,8 @@ Corresponds to the number of "cells" between each group.}
 
 \item{ident.title}{Customed legend title of identity}
 
-\item{combine}{Combine plots into a single gg object; note that if TRUE; themeing will not work
-when plotting multiple dimensions}
+\item{combine}{Combine plots into a single \code{\link[patchwork]{patchwork}ed}
+ggplot object. If \code{FALSE}, return a list of ggplot objects}
 }
 \value{
 A ggplot object
