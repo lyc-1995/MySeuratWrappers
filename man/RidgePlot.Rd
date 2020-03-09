@@ -18,9 +18,8 @@ RidgePlot(
   ncol = NULL,
   x.lab = NULL,
   y.lab = NULL,
-  do.italic = FALSE,
-  do.bold = TRUE,
   line.size = 0.5,
+  features.face = c("bold", "plain", "italic", "bold.italic"),
   axis.title.size = NULL,
   axis.ticks.size = NULL,
   axis.text.size = NULL,
@@ -57,13 +56,9 @@ expression of the attribute being potted, can also pass 'increasing' or 'decreas
 
 \item{y.lab}{Title of y axis}
 
-\item{do.italic}{Whether or not to use italic text on gene names}
-
-\item{do.bold}{Whether or not to use bold font on plot title}
-
 \item{line.size}{Size of axis line}
 
-\item{axis.title.size, axis.ticks.size, axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
+\item{features.face, axis.title.size, axis.ticks.size, axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
 
 \item{slot}{Use non-normalized counts data for plotting}
 

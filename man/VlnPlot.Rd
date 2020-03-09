@@ -22,8 +22,7 @@ VlnPlot(
   slot = "data",
   x.lab = NULL,
   y.lab = NULL,
-  do.italic = FALSE,
-  do.bold = TRUE,
+  features.face = c("bold", "plain", "italic", "bold.italic"),
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
@@ -69,9 +68,7 @@ expression of the attribute being potted, can also pass 'increasing' or 'decreas
 
 \item{y.lab}{Title of y axis}
 
-\item{do.italic}{Whether or not to use italic text on gene names}
-
-\item{do.bold}{Whether or not to use bold font on plot title}
+\item{features.face}{Parameters about axis to be passed to \code{\link{theme}}}
 
 \item{line.size}{Size of axis line}
 

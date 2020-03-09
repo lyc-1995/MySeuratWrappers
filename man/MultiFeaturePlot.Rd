@@ -2,30 +2,37 @@
 % Please edit documentation in R/visualization.R
 \name{MultiFeaturePlot}
 \alias{MultiFeaturePlot}
-\title{Visualize 'features' on a dimensional reduction plot, with a modified type of legend}
+\title{Visualize 'features' on a dimensional reduction plot}
 \usage{
 MultiFeaturePlot(
   object,
   features,
+  dims = c(1, 2),
+  cells = NULL,
+  cols = c("lightgrey", "blue"),
+  pt.size = NULL,
+  order = FALSE,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  reduction = NULL,
+  split.by = NULL,
+  shape.by = NULL,
+  slot = "data",
+  label = FALSE,
+  label.size = 4,
+  repel = FALSE,
   ncol = NULL,
-  check.italic = FALSE,
-  do.bold = TRUE,
-  plot.title.size = NULL,
+  sort.cell = FALSE,
+  features.position = c("row", "col"),
+  title.size = 12,
+  title.face = c("bold", "plain", "italic", "bold.italic"),
   axis.type = c("default", "keep line", "keep title", "no axis"),
   line.size = 0.5,
-  axis.title.size = NULL,
-  axis.ticks.size = NULL,
-  axis.text.size = NULL,
-  show.legend = TRUE,
-  legend.title = NULL,
-  legend.title.size = NULL,
-  legend.text.size = NULL,
-  legend.key.size = 0.5,
-  ...
+  legend.title = NULL
 )
 }
 \arguments{
-\item{object}{A Seurat object}
+\item{object}{Seurat object}
 
 \item{features}{Vector of features to plot. Features can come from:
 \itemize{
@@ -35,31 +42,54 @@ MultiFeaturePlot(
     (e.g. the PC 1 scores - "PC_1")
 }}
 
-\item{ncol}{Number of columns to combine multiple feature plots to, ignored if split.by is not NULL}
+\item{dims}{Dimensions to plot, must be a two-length numeric vector specifying x- and y-dimensions}
 
-\item{check.italic}{Whether or not to use italic text on gene names}
+\item{cells}{Vector of cells to plot (default is all cells)}
 
-\item{do.bold}{Whether or not to use bold font on plot title}
+\item{cols}{The two colors to form the gradient over. Provide as string vector with
+the first color corresponding to low values, the second to high. Also accepts a Brewer
+color scale or vector of colors. Note: this will bin the data into number of colors provided.}
 
-\item{plot.title.size}{Plot title size}
+\item{pt.size}{Adjust point size for plotting}
+
+\item{order}{Boolean determining whether to plot cells in order of expression. Can be useful if
+cells expressing given feature are getting buried.}
+
+\item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature,
+may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')}
+
+\item{reduction}{Which dimensionality reduction to use. If not specified, first searches for umap, then tsne, then pca}
+
+\item{split.by}{A factor in object metadata to split the feature plot by, pass 'ident'
+to split by cell identity'; similar to the old \code{FeatureHeatmap}}
+
+\item{shape.by}{If NULL, all points are circles (default). You can specify any
+cell attribute (that can be pulled with FetchData) allowing for both
+different colors and different shapes on cells}
+
+\item{slot}{Which slot to pull expression data from?}
+
+\item{label}{Whether to label the clusters}
+
+\item{label.size}{Sets size of labels}
+
+\item{repel}{Repel labels}
+
+\item{ncol}{Number of columns for display when combining plots}
+
+\item{sort.cell}{If \code{TRUE}, the positive cells will overlap the negative cells}
+
+\item{features.position}{Where the feature label should be placed}
+
+\item{title.size, title.face}{Size and face of feature labels}
 
 \item{axis.type}{Select one of four axis types}
 
 \item{line.size}{Size of axis line}
 
-\item{axis.title.size, axis.ticks.size, axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
-
-\item{show.legend}{Whether or not to show legend}
-
-\item{legend.title}{A user-defined title of legend}
-
-\item{legend.title.size, legend.text.size, legend.key.size}{Parameters about legend to be passed to \code{\link{theme}}}
-
-\item{...}{Extra parameters passed on to \code{\link{FeaturePlot}}}
-}
-\value{
-A ggplot object
+\item{legend.title}{A vector of user-defined legend titles.}
 }
 \description{
-Colors single cells on a dimensional reduction plot according to a 'feature' (i.e. gene expression, PC scores, number of genes detected, etc.)
+Colors single cells on a dimensional reduction plot according to a 'feature'
+(i.e. gene expression, PC scores, number of genes detected, etc.)
 }

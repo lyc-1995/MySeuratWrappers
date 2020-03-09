@@ -195,6 +195,293 @@ DimPlot <- function(
 
 
 
+#' Visualize 'features' on a dimensional reduction plot
+#'
+#' Colors single cells on a dimensional reduction plot according to a 'feature'
+#' (i.e. gene expression, PC scores, number of genes detected, etc.)
+#'
+#' @inheritParams DimPlot
+#' @param order Boolean determining whether to plot cells in order of expression. Can be useful if
+#' cells expressing given feature are getting buried.
+#' @param features Vector of features to plot. Features can come from:
+#' \itemize{
+#'     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
+#'     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
+#'     \item A column name from a \code{DimReduc} object corresponding to the cell embedding values
+#'     (e.g. the PC 1 scores - "PC_1")
+#' }
+#' @param cols The two colors to form the gradient over. Provide as string vector with
+#' the first color corresponding to low values, the second to high. Also accepts a Brewer
+#' color scale or vector of colors. Note: this will bin the data into number of colors provided.
+#' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
+#'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
+#' @param split.by A factor in object metadata to split the feature plot by, pass 'ident'
+#'  to split by cell identity'; similar to the old \code{FeatureHeatmap}
+#' @param slot Which slot to pull expression data from?
+#' @param sort.cell If \code{TRUE}, the positive cells will overlap the negative cells
+#' @param features.position Where the feature label should be placed
+#' @param title.size,title.face Size and face of feature labels
+#'
+#' @import Seurat
+#'
+#' @importFrom grDevices rgb
+#' @importFrom RColorBrewer brewer.pal.info
+#' @importFrom ggplot2 labs scale_x_continuous scale_y_continuous theme element_rect facet_grid facet_wrap theme_bw
+#' dup_axis guides element_blank element_text margin scale_color_brewer scale_color_gradientn
+#' scale_color_manual coord_fixed ggtitle
+#'
+#' @export
+#'
+MultiFeaturePlot <- function(
+  object,
+  features,
+  dims = c(1, 2),
+  cells = NULL,
+  cols = c("lightgrey", "blue"),
+  pt.size = NULL,
+  order = FALSE,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  reduction = NULL,
+  split.by = NULL,
+  shape.by = NULL,
+  slot = "data",
+  label = FALSE,
+  label.size = 4,
+  repel = FALSE,
+  ncol = NULL,
+  sort.cell = FALSE,
+  features.position = c('row', 'col'),
+  title.size = 12,
+  title.face = c('bold', 'plain', 'italic', 'bold.italic'),
+  axis.type = c('default', 'keep line', 'keep title', 'no axis'),
+  line.size = 0.5,
+  legend.title = NULL
+) {
+  features.position <- match.arg(arg = features.position)
+  title.face <- match.arg(arg = title.face)
+  # Set a theme to remove right-hand Y axis lines
+  # Also sets right-hand Y axis text label formatting
+  no.right <- theme(
+    axis.line.y.right = element_blank(),
+    axis.ticks.y.right = element_blank(),
+    axis.text.y.right = element_blank()
+  )
+  # Get the DimReduc to use
+  reduction <- reduction %||% Seurat:::DefaultDimReduc(object = object)
+  if (length(x = dims) != 2 || !is.numeric(x = dims)) {
+    stop("'dims' must be a two-length integer vector")
+  }
+  # Name the reductions
+  dims <- paste0(Key(object = object[[reduction]]), dims)
+  cells <- cells %||% colnames(x = object)
+  # Get plotting data
+  data <- FetchData(
+    object = object,
+    vars = c(dims, 'ident', features),
+    cells = cells,
+    slot = slot
+  )
+  # Check presence of features/dimensions
+  if (ncol(x = data) < 4) {
+    stop(
+      "None of the requested features were found: ",
+      paste(features, collapse = ', '),
+      " in slot ",
+      slot,
+      call. = FALSE
+    )
+  } else if (!all(dims %in% colnames(x = data))) {
+    stop("The dimensions requested were not found", call. = FALSE)
+  }
+  features <- colnames(x = data)[4:ncol(x = data)]
+  # Determine cutoffs
+  min.cutoff <- mapply(
+    FUN = function(cutoff, feature) {
+      return(ifelse(
+        test = is.na(x = cutoff),
+        yes = min(data[, feature]),
+        no = cutoff
+      ))
+    },
+    cutoff = min.cutoff,
+    feature = features
+  )
+  max.cutoff <- mapply(
+    FUN = function(cutoff, feature) {
+      return(ifelse(
+        test = is.na(x = cutoff),
+        yes = max(data[, feature]),
+        no = cutoff
+      ))
+    },
+    cutoff = max.cutoff,
+    feature = features
+  )
+  check.lengths <- unique(x = vapply(
+    X = list(features, min.cutoff, max.cutoff),
+    FUN = length,
+    FUN.VALUE = numeric(length = 1)
+  ))
+  if (length(x = check.lengths) != 1) {
+    stop("There must be the same number of minimum and maximum cuttoffs as there are features")
+  }
+  brewer.gran <- ifelse(
+    test = length(x = cols) == 1,
+    yes = brewer.pal.info[cols, ]$maxcolors,
+    no = length(x = cols)
+  )
+  # Apply cutoffs
+  data[, 4:ncol(x = data)] <- sapply(
+    X = 4:ncol(x = data),
+    FUN = function(index) {
+      data.feature <- as.vector(x = data[, index])
+      min.use <- Seurat:::SetQuantile(cutoff = min.cutoff[index - 3], data.feature)
+      max.use <- Seurat:::SetQuantile(cutoff = max.cutoff[index - 3], data.feature)
+      data.feature[data.feature < min.use] <- min.use
+      data.feature[data.feature > max.use] <- max.use
+      if (brewer.gran == 2) {
+        return(data.feature)
+      }
+      data.cut <- if (all(data.feature == 0)) {
+        0
+      }
+      else {
+        as.numeric(x = as.factor(x = cut(
+          x = as.numeric(x = data.feature),
+          breaks = brewer.gran
+        )))
+      }
+      return(data.cut)
+    }
+  )
+  colnames(x = data)[4:ncol(x = data)] <- features
+  rownames(x = data) <- cells
+  # Figure out splits (FeatureHeatmap)
+  data$split <- if (is.null(x = split.by)) {
+    Seurat:::RandomName()
+  } else {
+    switch(
+      EXPR = split.by,
+      ident = Idents(object = object)[cells],
+      object[[split.by, drop = TRUE]][cells]
+    )
+  }
+  if (!is.factor(x = data$split)) {
+    data$split <- factor(x = data$split)
+  }
+  # Set shaping variable
+  if (!is.null(x = shape.by)) {
+    data[, shape.by] <- object[[shape.by, drop = TRUE]]
+  }
+  # Apply common limits
+  xlims <- c(floor(x = min(data[, dims[1]])), ceiling(x = max(data[, dims[1]])))
+  ylims <- c(floor(min(data[, dims[2]])), ceiling(x = max(data[, dims[2]])))
+  if (is.null(x = ncol)) {
+    ncol <- 2
+    if (length(x = features) == 1) {
+      ncol <- 1
+    }
+    if (length(x = features) > 6) {
+      ncol <- 3
+    }
+    if (length(x = features) > 9) {
+      ncol <- 4
+    }
+  }
+  # Combine data
+  data.plot <- data
+  data.plot <- lapply(
+    X = features,
+    FUN = function(x) {
+      df <- data.plot[, c(dims, 'ident', 'split')]
+      df$features <- x
+      df$value <- scale(data.plot[, x])
+      if (sort.cell) {
+        df <- df[order(df$value), ]
+      }
+      return(df)
+    }
+  )
+  data.plot <- do.call(rbind, data.plot)
+  data.plot$features <- factor(data.plot$features, levels = features)
+  breaks <- c(min(data.plot$value), max(data.plot$value))
+
+  # Set expression fomula for facet
+  if (length(x = unique(x = data.plot$split)) != 1) {
+    split.by <- 'split'
+  } else {
+    split.by <- NULL
+  }
+  row <- switch(
+    EXPR = features.position,
+    'row' = 'features',
+    'col' = split.by
+  )
+  col <- switch(
+    EXPR = features.position,
+    'row' = split.by,
+    'col' = 'features'
+  )
+  if (!is.null(x = split.by)) {
+    expr <- paste0(col, ' ~ ', row)
+    facet <- facet_grid(expr, switch = 'y')
+    y <- scale_y_continuous(position = 'right')
+  } else {
+    facet <- facet_wrap('~features', strip.position = 'top', ncol = ncol)
+    y <- NULL
+  }
+  # Make plot
+  plot <- suppressMessages(
+    SingleDimPlot(
+      data = data.plot,
+      dims = dims,
+      col.by = 'value',
+      order = order,
+      pt.size = pt.size,
+      cols = cols,
+      shape.by = shape.by,
+      label = FALSE
+    ) + y + facet +
+      theme_bw(base_line_size = line.size, base_rect_size = line.size) +
+      guides(color = NULL) +
+      labs(colour = legend.title) +
+      scale_color_gradientn(colors = cols, breaks = breaks, labels = c('Min', 'Max')) +
+      theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()
+      )
+  )
+  if (label) {
+    plot <- LabelClusters(
+      plot = plot,
+      id = 'ident',
+      repel = repel,
+      size = label.size
+    )
+  }
+  facet.theme <- switch(
+    EXPR = features.position,
+    'row' = theme(strip.text.x = element_text(size = title.size, face = title.face),
+                  strip.text.y = element_text(size = title.size, face = 'plain')),
+    'col' = theme(strip.text.y = element_text(size = title.size, face = title.face),
+                  strip.text.x = element_text(size = title.size, face = 'plain'))
+  )
+  axis.type <- match.arg(arg = axis.type)
+  axis.theme <- switch(
+    EXPR = axis.type,
+    'default' = theme(),
+    'keep line' = theme(axis.text = element_blank(), axis.ticks = element_blank()),
+    'keep title' = theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.line = element_blank()),
+    'no axis' = NoAxes()
+  )
+  plot <- plot + facet.theme + axis.theme
+  return(plot)
+}
+
+
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Expression by identity plots
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -219,10 +506,8 @@ DimPlot <- function(
 #' @param ncol Number of columns if multiple plots are displayed
 #' @param x.lab Title of x axis
 #' @param y.lab Title of y axis
-#' @param do.italic Whether or not to use italic text on gene names
-#' @param do.bold Whether or not to use bold font on plot title
 #' @param line.size Size of axis line
-#' @param axis.title.size,axis.ticks.size,axis.text.size Parameters about axis to be passed to \code{\link{theme}}
+#' @param features.face,axis.title.size,axis.ticks.size,axis.text.size Parameters about axis to be passed to \code{\link{theme}}
 #' @param slot Use non-normalized counts data for plotting
 #' @param combine Combine plots into a single \code{\link[patchwork]{patchwork}ed}
 #' ggplot object. If \code{FALSE}, return a list of ggplot objects
@@ -249,15 +534,15 @@ RidgePlot <- function(
   ncol = NULL,
   x.lab = NULL,
   y.lab = NULL,
-  do.italic = FALSE,
-  do.bold = TRUE,
   line.size = 0.5,
+  features.face = c('bold', 'plain', 'italic', 'bold.italic'),
   axis.title.size = NULL,
   axis.ticks.size = NULL,
   axis.text.size = NULL,
   slot = 'data',
   combine = TRUE
 ) {
+  features.face <- match.arg(arg = features.face)
   return(ExIPlot(
     object = object,
     type = 'ridge',
@@ -273,9 +558,8 @@ RidgePlot <- function(
     log = log,
     x.lab = x.lab,
     y.lab = y.lab,
-    do.italic = do.italic,
-    do.bold = do.bold,
     line.size = line.size,
+    features.face = features.face,
     axis.title.size = axis.title.size,
     axis.ticks.size = axis.ticks.size,
     axis.text.size = axis.text.size,
@@ -283,6 +567,8 @@ RidgePlot <- function(
     combine = combine
   ))
 }
+
+
 
 #' Single cell violin plot
 #'
@@ -325,8 +611,7 @@ VlnPlot <- function(
   slot = 'data',
   x.lab = NULL,
   y.lab = NULL,
-  do.italic = FALSE,
-  do.bold = TRUE,
+  features.face = c('bold', 'plain', 'italic', 'bold.italic'),
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
@@ -334,6 +619,7 @@ VlnPlot <- function(
   multi.group = FALSE,
   combine = TRUE
 ) {
+  features.face <- match.arg(arg = features.face)
   return(ExIPlot(
     object = object,
     type = ifelse(test = multi.group, yes = 'multiViolin', no = 'violin'),
@@ -352,8 +638,7 @@ VlnPlot <- function(
     log = log,
     x.lab = x.lab,
     y.lab = y.lab,
-    do.italic = do.italic,
-    do.bold = do.bold,
+    features.face = features.face,
     line.size = line.size,
     axis.title.size = axis.title.size,
     axis.ticks.size = axis.ticks.size,
@@ -361,127 +646,6 @@ VlnPlot <- function(
     slot = slot,
     combine = combine
   ))
-}
-
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Dimensional reduction plots
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-#' Visualize 'features' on a dimensional reduction plot, with a modified type of legend
-#'
-#' Colors single cells on a dimensional reduction plot according to a 'feature' (i.e. gene expression, PC scores, number of genes detected, etc.)
-#'
-#' @param object A Seurat object
-#' @param features Vector of features to plot. Features can come from:
-#' \itemize{
-#'     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
-#'     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
-#'     \item A column name from a \code{DimReduc} object corresponding to the cell embedding values
-#'     (e.g. the PC 1 scores - "PC_1")
-#' }
-#' @param ncol Number of columns to combine multiple feature plots to, ignored if split.by is not NULL
-#' @param check.italic Whether or not to use italic text on gene names
-#' @param do.bold Whether or not to use bold font on plot title
-#' @param plot.title.size Plot title size
-#' @param axis.type Select one of four axis types
-#' @param line.size Size of axis line
-#' @param axis.title.size,axis.ticks.size,axis.text.size Parameters about axis to be passed to \code{\link{theme}}
-#' @param show.legend Whether or not to show legend
-#' @param legend.title A user-defined title of legend
-#' @param legend.title.size,legend.text.size,legend.key.size Parameters about legend to be passed to \code{\link{theme}}
-#' @param ... Extra parameters passed on to \code{\link{FeaturePlot}}
-#'
-#' @return A ggplot object
-#'
-#' @import Seurat
-#' @import ggplot2
-#' @importFrom cowplot get_legend plot_grid theme_cowplot
-#'
-#' @export
-#'
-MultiFeaturePlot <- function(
-  object,
-  features,
-  ncol = NULL,
-  check.italic = FALSE,
-  do.bold = TRUE,
-  plot.title.size = NULL,
-  axis.type = c('default', 'keep line', 'keep title', 'no axis'),
-  line.size = 0.5,
-  axis.title.size = NULL,
-  axis.ticks.size = NULL,
-  axis.text.size = NULL,
-  show.legend = TRUE,
-  legend.title = NULL,
-  legend.title.size = NULL,
-  legend.text.size = NULL,
-  legend.key.size = 0.5,
-  ...
-) {
-  axis.type <- match.arg(arg = axis.type)
-  ncol <- ncol %||% min(length(x = features), 4)
-
-  plot.tmp <- FeaturePlot(object = object, features = features[1], ...)
-  plot.legend <- get_legend(plot = plot.tmp + theme(legend.position = 'right'))
-  cols <- as.character(plot.legend$grobs[[1]]$grobs[[2]]$raster)
-
-  data.tmp <- plot.tmp[['data']][, features[1]]
-  breaks <- c(min(data.tmp), max(data.tmp))
-  plot.tmp <- suppressMessages(plot.tmp + labs(colour = legend.title) + scale_color_gradientn(colors = rev(cols), breaks = breaks, labels = c('Min', 'Max')) +
-                                 theme(legend.text = element_text(size = legend.text.size),
-                                       legend.title = element_text(size = legend.title.size),
-                                       legend.key.size = unit(legend.key.size, 'lines')))
-  plot.legend <- get_legend(plot = plot.tmp + theme(legend.position = 'right'))
-  rm(plot.tmp, data.tmp, cols, breaks);gc(reset = TRUE)
-
-  plots <- lapply(features, function(f) {
-    face <- ifelse(
-      test = do.bold,
-      yes = 'bold',
-      no = 'plain'
-    )
-    if (check.italic) {
-      if (f %in% rownames(object)) {
-        face <- ifelse(
-          test = do.bold,
-          yes = 'bold.italic',
-          no = 'italic'
-        )
-      }
-    }
-    p <- FeaturePlot(object = object, features = f, ...) + theme_cowplot(line_size = line.size) + NoLegend() +
-      theme(plot.title = element_text(face = face, size = plot.title.size, hjust = 0.5),
-            axis.title = element_text(size = axis.title.size),
-            axis.ticks = element_line(size = axis.ticks.size),
-            axis.text = element_text(size = axis.text.size))
-    axis.theme <- switch(
-      EXPR = axis.type,
-      'default' = theme(),
-      'keep line' = theme(axis.text = element_blank(), axis.ticks = element_blank()),
-      'keep title' = theme(axis.text = element_blank(), axis.ticks = element_blank(), axis.line = element_blank()),
-      'no axis' = NoAxes()
-    )
-    p <- p + axis.theme
-    return(p)
-  })
-
-  plots.combined <- plot_grid(
-    plotlist = plots,
-    ncol = ncol,
-    align = 'hv'
-  )
-  if (show.legend) {
-    plots.combined <- plot_grid(
-        plots.combined,
-        plot.legend,
-        rel_widths = c(3, 0.3)
-    )
-    return(plots.combined)
-  } else {
-    return(plots.combined)
-  }
 }
 
 
@@ -778,7 +942,6 @@ DoHeatmap <- function(
 # Internal
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 # Plot a single dimension
 #
 # @param data Data to plot
@@ -1008,8 +1171,7 @@ ExIPlot <- function(
   log = FALSE,
   x.lab = NULL,
   y.lab = NULL,
-  do.italic = FALSE,
-  do.bold = TRUE,
+  features.face = c('bold', 'plain', 'italic', 'bold.italic'),
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
@@ -1020,6 +1182,7 @@ ExIPlot <- function(
   combine = TRUE
 ) {
   direction = match.arg(arg = direction)
+  features.face <- match.arg(arg = features.face)
   assay <- assay %||% DefaultAssay(object = object)
   DefaultAssay(object = object) <- assay
   data <- FetchData(object = object, vars = features, slot = slot)
@@ -1107,8 +1270,7 @@ ExIPlot <- function(
       log = log,
       x.lab = x.lab,
       y.lab = y.lab,
-      do.italic = do.italic,
-      do.bold = do.bold,
+      features.face = features.face,
       line.size = line.size,
       axis.title.size = axis.title.size,
       axis.ticks.size = axis.ticks.size,
@@ -1167,8 +1329,7 @@ ExIPlot <- function(
             log = log,
             x.lab = x.lab,
             y.lab = y.lab,
-            do.italic = do.italic,
-            do.bold = do.bold,
+            features.face = features.face,
             line.size = line.size,
             axis.title.size = axis.title.size,
             axis.ticks.size = axis.ticks.size,
@@ -1226,7 +1387,7 @@ ExIPlot <- function(
 #' @importFrom stats rnorm
 #' @importFrom utils globalVariables
 #' @importFrom ggridges geom_density_ridges theme_ridges
-#' @importFrom ggplot2 ggplot aes_string theme labs geom_violin geom_jitter ylim theme_bw facet_wrap
+#' @importFrom ggplot2 ggplot aes_string theme labs geom_violin geom_jitter ylim theme_bw facet_grid
 #' scale_fill_manual scale_y_log10 scale_x_log10 scale_y_discrete scale_x_continuous waiver
 #' @importFrom cowplot theme_cowplot
 #'
@@ -1244,8 +1405,7 @@ SingleExIPlot <- function(
   log = FALSE,
   x.lab = NULL,
   y.lab = NULL,
-  do.italic = FALSE,
-  do.bold = TRUE,
+  features.face = c('bold', 'plain', 'italic', 'bold.italic'),
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
@@ -1256,21 +1416,10 @@ SingleExIPlot <- function(
   if (!is.null(x = seed.use)) {
     set.seed(seed = seed.use)
   }
+  features.face <- match.arg(arg = features.face)
   direction <- match.arg(arg = direction)
   x.lab <- x.lab %||% 'identity'
   y.lab <- y.lab %||% 'Expression Level'
-  face <- ifelse(
-    test = do.bold,
-    yes = 'bold',
-    no = 'plain'
-  )
-  if (do.italic) {
-    face <- ifelse(
-      test = do.bold,
-      yes = 'bold.italic',
-      no = 'italic'
-    )
-  }
   if (stacked) {
     if (!is.data.frame(x = data) || any(!c('features', 'ident', 'value') %in% colnames(x = data))) {
       stop('Stacked plot requires a data frame with "features", "idents" and "value" as column names')
@@ -1406,7 +1555,7 @@ SingleExIPlot <- function(
   plot <- do.call(what = '+', args = list(plot, geom))
   plot <- plot +
     theme(
-      plot.title = element_text(hjust = 0.5, face = face),
+      plot.title = element_text(hjust = 0.5, face = features.face),
       axis.title = element_text(size = axis.title.size),
       axis.ticks = element_line(size = axis.ticks.size),
       axis.text = element_text(size = axis.text.size)
@@ -1468,7 +1617,7 @@ SingleExIPlot <- function(
       angle <- 0
     }
     stacked.theme <- theme(
-      strip.text = element_text(angle = angle, face = face),
+      strip.text = element_text(angle = angle, face = features.face),
       strip.placement = 'outside',
       strip.background.x = element_rect(colour = "red", fill = "#FFFFFF"),
       strip.background.y = element_rect(colour = "red", fill = "#FFFFFF"),
