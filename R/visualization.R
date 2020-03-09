@@ -171,7 +171,7 @@ DimPlot <- function(
         )
       }
       if (!is.null(x = split.by)) {
-        plot <- plot + FacetTheme() +
+        plot <- plot + Seurat:::FacetTheme() +
           facet_wrap(
             facets = vars(!!sym(x = split.by)),
             ncol = if (length(x = group.by) > 1 || is.null(x = ncol)) {
@@ -396,7 +396,7 @@ MultiFeaturePlot <- function(
     FUN = function(x) {
       df <- data.plot[, c(dims, 'ident', 'split')]
       df$features <- x
-      df$value <- scale(data.plot[, x])
+      df$value <- (data.plot[, x] - min(data.plot[, x])) / (max(data.plot[, x]) - min(data.plot[, x]))
       if (sort.cell) {
         df <- df[order(df$value), ]
       }
