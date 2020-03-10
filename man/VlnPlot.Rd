@@ -23,10 +23,13 @@ VlnPlot(
   x.lab = NULL,
   y.lab = NULL,
   features.face = c("bold", "plain", "italic", "bold.italic"),
+  features.size = NULL,
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
   axis.text.size = NULL,
+  direction = c("vertical", "horizontal"),
+  stacked = FALSE,
   multi.group = FALSE,
   combine = TRUE
 )
@@ -68,15 +71,19 @@ expression of the attribute being potted, can also pass 'increasing' or 'decreas
 
 \item{y.lab}{Title of y axis}
 
-\item{features.face}{Parameters about axis to be passed to \code{\link{theme}}}
+\item{features.face}{Parameters to be passed to \code{\link{theme}}}
+
+\item{features.size}{Parameters to be passed to \code{\link{theme}}}
 
 \item{line.size}{Size of axis line}
 
-\item{axis.title.size}{Parameters about axis to be passed to \code{\link{theme}}}
+\item{axis.title.size}{Parameters to be passed to \code{\link{theme}}}
 
-\item{axis.ticks.size}{Parameters about axis to be passed to \code{\link{theme}}}
+\item{axis.ticks.size}{Parameters to be passed to \code{\link{theme}}}
 
-\item{axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
+\item{axis.text.size}{Parameters to be passed to \code{\link{theme}}}
+
+\item{stacked}{Make stacked plot}
 
 \item{multi.group}{plot each group of the split violin plots by multiple or single violin shapes
 see \code{\link{FetchData}} for more details}

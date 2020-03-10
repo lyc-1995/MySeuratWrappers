@@ -20,10 +20,12 @@ RidgePlot(
   y.lab = NULL,
   line.size = 0.5,
   features.face = c("bold", "plain", "italic", "bold.italic"),
+  features.size = NULL,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
   axis.text.size = NULL,
   slot = "data",
+  stacked = FALSE,
   combine = TRUE
 )
 }
@@ -58,9 +60,11 @@ expression of the attribute being potted, can also pass 'increasing' or 'decreas
 
 \item{line.size}{Size of axis line}
 
-\item{features.face, axis.title.size, axis.ticks.size, axis.text.size}{Parameters about axis to be passed to \code{\link{theme}}}
+\item{features.face, features.size, axis.title.size, axis.ticks.size, axis.text.size}{Parameters to be passed to \code{\link{theme}}}
 
 \item{slot}{Use non-normalized counts data for plotting}
+
+\item{stacked}{Make stacked plot}
 
 \item{combine}{Combine plots into a single \code{\link[patchwork]{patchwork}ed}
 ggplot object. If \code{FALSE}, return a list of ggplot objects}

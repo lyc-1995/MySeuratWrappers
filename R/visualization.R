@@ -507,8 +507,9 @@ MultiFeaturePlot <- function(
 #' @param x.lab Title of x axis
 #' @param y.lab Title of y axis
 #' @param line.size Size of axis line
-#' @param features.face,axis.title.size,axis.ticks.size,axis.text.size Parameters about axis to be passed to \code{\link{theme}}
+#' @param features.face,features.size,axis.title.size,axis.ticks.size,axis.text.size Parameters to be passed to \code{\link{theme}}
 #' @param slot Use non-normalized counts data for plotting
+#' @param stacked Make stacked plot
 #' @param combine Combine plots into a single \code{\link[patchwork]{patchwork}ed}
 #' ggplot object. If \code{FALSE}, return a list of ggplot objects
 #'
@@ -536,10 +537,12 @@ RidgePlot <- function(
   y.lab = NULL,
   line.size = 0.5,
   features.face = c('bold', 'plain', 'italic', 'bold.italic'),
+  features.size = NULL,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
   axis.text.size = NULL,
   slot = 'data',
+  stacked = FALSE,
   combine = TRUE
 ) {
   features.face <- match.arg(arg = features.face)
@@ -560,10 +563,12 @@ RidgePlot <- function(
     y.lab = y.lab,
     line.size = line.size,
     features.face = features.face,
+    features.size = features.size,
     axis.title.size = axis.title.size,
     axis.ticks.size = axis.ticks.size,
     axis.text.size = axis.text.size,
     slot = slot,
+    stacked = stacked,
     combine = combine
   ))
 }
@@ -612,13 +617,17 @@ VlnPlot <- function(
   x.lab = NULL,
   y.lab = NULL,
   features.face = c('bold', 'plain', 'italic', 'bold.italic'),
+  features.size = NULL,
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
   axis.text.size = NULL,
+  direction = c('vertical', 'horizontal'),
+  stacked = FALSE,
   multi.group = FALSE,
   combine = TRUE
 ) {
+  direction <- match.arg(arg = direction)
   features.face <- match.arg(arg = features.face)
   return(ExIPlot(
     object = object,
@@ -639,11 +648,14 @@ VlnPlot <- function(
     x.lab = x.lab,
     y.lab = y.lab,
     features.face = features.face,
+    features.size = features.size,
     line.size = line.size,
     axis.title.size = axis.title.size,
     axis.ticks.size = axis.ticks.size,
     axis.text.size = axis.text.size,
     slot = slot,
+    direction = direction,
+    stacked = stacked,
     combine = combine
   ))
 }
@@ -1172,6 +1184,7 @@ ExIPlot <- function(
   x.lab = NULL,
   y.lab = NULL,
   features.face = c('bold', 'plain', 'italic', 'bold.italic'),
+  features.size = NULL,
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
@@ -1271,6 +1284,7 @@ ExIPlot <- function(
       x.lab = x.lab,
       y.lab = y.lab,
       features.face = features.face,
+      features.size = features.size,
       line.size = line.size,
       axis.title.size = axis.title.size,
       axis.ticks.size = axis.ticks.size,
@@ -1330,6 +1344,7 @@ ExIPlot <- function(
             x.lab = x.lab,
             y.lab = y.lab,
             features.face = features.face,
+            features.size = features.size,
             line.size = line.size,
             axis.title.size = axis.title.size,
             axis.ticks.size = axis.ticks.size,
@@ -1383,12 +1398,11 @@ ExIPlot <- function(
 #
 # @return A ggplot-based Expression-by-Identity plot
 #
-# @import ggplot2
 #' @importFrom stats rnorm
 #' @importFrom utils globalVariables
 #' @importFrom ggridges geom_density_ridges theme_ridges
 #' @importFrom ggplot2 ggplot aes_string theme labs geom_violin geom_jitter ylim theme_bw facet_grid
-#' scale_fill_manual scale_y_log10 scale_x_log10 scale_y_discrete scale_x_continuous waiver
+#' scale_fill_manual scale_y_log10 scale_x_log10 scale_x_discrete scale_y_discrete scale_x_continuous waiver
 #' @importFrom cowplot theme_cowplot
 #'
 SingleExIPlot <- function(
@@ -1406,6 +1420,7 @@ SingleExIPlot <- function(
   x.lab = NULL,
   y.lab = NULL,
   features.face = c('bold', 'plain', 'italic', 'bold.italic'),
+  features.size = NULL,
   line.size = 0.5,
   axis.title.size = NULL,
   axis.ticks.size = NULL,
@@ -1526,8 +1541,8 @@ SingleExIPlot <- function(
       ylab <- x.lab
       geom <- list(
         geom_density_ridges(scale = 4),
-        theme_ridges(line_size = line.size),
-        scale_y_discrete(expand = c(0.01, 0)),
+        theme_bw(base_line_size = line.size),
+        scale_y_discrete(expand = c(0.01, 0), limits = rev(levels(x = idents))),
         scale_x_continuous(expand = c(0, 0))
       )
       jitter <- geom_jitter(width = 0, size = pt.size)
@@ -1550,12 +1565,12 @@ SingleExIPlot <- function(
     labs(x = xlab, y = ylab, title = title, fill = NULL) +
     base.theme
   if (type == 'violin' && direction == 'horizontal') {
-    plot <- plot + coord_flip()
+    plot <- plot + coord_flip() + scale_x_discrete(limits = rev(levels(x = idents)))
   }
   plot <- do.call(what = '+', args = list(plot, geom))
   plot <- plot +
     theme(
-      plot.title = element_text(hjust = 0.5, face = features.face),
+      plot.title = element_text(hjust = 0.5, face = features.face, size = features.size),
       axis.title = element_text(size = axis.title.size),
       axis.ticks = element_line(size = axis.ticks.size),
       axis.text = element_text(size = axis.text.size)
@@ -1617,7 +1632,7 @@ SingleExIPlot <- function(
       angle <- 0
     }
     stacked.theme <- theme(
-      strip.text = element_text(angle = angle, face = features.face),
+      strip.text = element_text(angle = angle, face = features.face, size = features.size),
       strip.placement = 'outside',
       strip.background.x = element_rect(colour = "red", fill = "#FFFFFF"),
       strip.background.y = element_rect(colour = "red", fill = "#FFFFFF"),
