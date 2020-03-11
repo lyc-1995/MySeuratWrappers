@@ -10,7 +10,7 @@ Depends:
     dplyr,
     methods,
     reticulate,
-    Seurat (>= 3.1.4),
+    Seurat (>= 3.1.1),
     tidyr
 Imports:
     BiocManager,
