@@ -986,7 +986,7 @@ DoHeatmap <- function(
 #' @import Seurat
 #' @importFrom cowplot theme_cowplot
 #' @importFrom RColorBrewer brewer.pal.info
-#' @importFrom ggplot2 ggplot aes_string labs geom_text guides
+#' @importFrom ggplot2 ggplot aes_string labs geom_text guides element_line element_text unit
 #'  scale_color_brewer scale_color_manual element_rect guide_legend discrete_scale
 #'
 SingleDimPlot <- function(
@@ -1632,7 +1632,8 @@ SingleExIPlot <- function(
       angle <- 0
     }
     stacked.theme <- theme(
-      strip.text = element_text(angle = angle, face = features.face, size = features.size),
+      strip.text.x = element_text(angle = angle, face = features.face, size = features.size),
+      strip.text.y = element_text(angle = angle, face = features.face, size = features.size),
       strip.placement = 'outside',
       strip.background.x = element_rect(colour = "red", fill = "#FFFFFF"),
       strip.background.y = element_rect(colour = "red", fill = "#FFFFFF"),
