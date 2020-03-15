@@ -827,7 +827,7 @@ DoHeatmap <- function(
       cols <- group.colors[1:length(x = levels(x = group.use))] %||% default.colors
       if (any(is.na(x = cols))) {
         cols[is.na(x = cols)] <- default.colors[is.na(x = cols)]
-        cols <- Col2Hex(cols)
+        cols <- Seurat:::Col2Hex(cols)
         col.dups <- sort(x = unique(x = which(x = duplicated(x = substr(
           x = cols,
           start = 1,
@@ -1237,7 +1237,7 @@ ExIPlot <- function(
       split <- interaction(idents, split)
       cols <- hue_pal()(length(x = levels(x = idents)))
     } else {
-      cols <- Col2Hex(cols)
+      cols <- Seurat:::Col2Hex(cols)
     }
     if (length(x = cols) < length(x = levels(x = split))) {
       cols <- Seurat:::Interleave(cols, Seurat:::InvertHex(hexadecimal = cols))
