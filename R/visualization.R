@@ -1401,7 +1401,7 @@ ExIPlot <- function(
 #' @importFrom stats rnorm
 #' @importFrom utils globalVariables
 #' @importFrom ggridges geom_density_ridges theme_ridges
-#' @importFrom ggplot2 ggplot aes_string theme labs geom_violin geom_jitter ylim theme_bw facet_grid
+#' @importFrom ggplot2 ggplot aes_string theme labs geom_violin geom_jitter ylim theme_bw facet_grid scale_color_manual
 #' scale_fill_manual scale_y_log10 scale_x_log10 scale_x_discrete scale_y_discrete scale_x_continuous waiver
 #' @importFrom cowplot theme_cowplot
 #'
@@ -1558,10 +1558,19 @@ SingleExIPlot <- function(
   } else {
     base.theme <- theme_cowplot(line_size = line.size)
   }
-  plot <- ggplot(
-    data = data,
-    mapping = aes_string(x = x, y = y, fill = fill)[c(2, 3, 1)]
-  ) +
+  if (pt.size == 0) {
+    plot <- ggplot(
+      data = data,
+      mapping = aes_string(x = x, y = y, fill = fill, color = fill)[c(2, 3, 4, 1)]
+
+    )
+  } else {
+    plot <- ggplot(
+      data = data,
+      mapping = aes_string(x = x, y = y, fill = fill)[c(2, 3, 1)]
+    )
+  }
+  plot <- plot +
     labs(x = xlab, y = ylab, title = title, fill = NULL) +
     base.theme
   if (type == 'violin' && direction == 'horizontal') {
@@ -1615,7 +1624,11 @@ SingleExIPlot <- function(
     } else {
       labels <- levels(x = droplevels(data$ident))
     }
-    plot <- plot + scale_fill_manual(values = cols, labels = labels)
+    if (pt.size == 0) {
+      plot <- plot + scale_fill_manual(values = cols, labels = labels) + scale_color_manual(values = cols, guide = 'none')
+    } else {
+      plot <- plot + scale_fill_manual(values = cols, labels = labels)
+    }
   }
   if (stacked) {
     plot <- switch(
