@@ -28,7 +28,8 @@ MultiFeaturePlot(
   title.face = c("bold", "plain", "italic", "bold.italic"),
   axis.type = c("default", "keep line", "keep title", "no axis"),
   line.size = 0.5,
-  legend.title = NULL
+  legend.title = NULL,
+  ...
 )
 }
 \arguments{
@@ -88,6 +89,8 @@ different colors and different shapes on cells}
 \item{line.size}{Size of axis line}
 
 \item{legend.title}{A vector of user-defined legend titles.}
+
+\item{...}{Extra parameters to \code{\link{LabelClusters}}}
 }
 \description{
 Colors single cells on a dimensional reduction plot according to a 'feature'

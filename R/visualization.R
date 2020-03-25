@@ -53,6 +53,7 @@ NULL
 #' @param ncol Number of columns for display when combining plots
 #' @param combine Combine plots into a single \code{\link[patchwork]{patchwork}ed}
 #' ggplot object. If \code{FALSE}, return a list of ggplot objects
+#' @param ... Extra parameters to \code{\link{LabelClusters}}
 #'
 #' @return A \code{\link[patchwork]{patchwork}ed} ggplot object if
 #' \code{combine = TRUE}; otherwise, a list of ggplot objects
@@ -103,7 +104,8 @@ DimPlot <- function(
   legend.text.size = NULL,
   legend.key.size = 0.5,
   ncol = NULL,
-  combine = TRUE
+  combine = TRUE,
+  ...
 ) {
   if (length(x = dims) != 2) {
     stop("'dims' must be a two-length vector")
@@ -167,7 +169,8 @@ DimPlot <- function(
           id = x,
           repel = repel,
           size = label.size,
-          split.by = split.by
+          split.by = split.by,
+          ...
         )
       }
       if (!is.null(x = split.by)) {
@@ -221,6 +224,7 @@ DimPlot <- function(
 #' @param sort.cell If \code{TRUE}, the positive cells will overlap the negative cells
 #' @param features.position Where the feature label should be placed
 #' @param title.size,title.face Size and face of feature labels
+#' @param ... Extra parameters to \code{\link{LabelClusters}}
 #'
 #' @import Seurat
 #'
@@ -256,7 +260,8 @@ MultiFeaturePlot <- function(
   title.face = c('bold', 'plain', 'italic', 'bold.italic'),
   axis.type = c('default', 'keep line', 'keep title', 'no axis'),
   line.size = 0.5,
-  legend.title = NULL
+  legend.title = NULL,
+  ...
 ) {
   features.position <- match.arg(arg = features.position)
   title.face <- match.arg(arg = title.face)
@@ -458,7 +463,8 @@ MultiFeaturePlot <- function(
       plot = plot,
       id = 'ident',
       repel = repel,
-      size = label.size
+      size = label.size,
+      ...
     )
   }
   facet.theme <- switch(
@@ -951,6 +957,143 @@ DoHeatmap <- function(
 
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Exported utility functions
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#' Label clusters on a ggplot2-based scatter plot
+#'
+#' @param plot A ggplot2-based scatter plot
+#' @param id Name of variable used for coloring scatter plot
+#' @param clusters Vector of cluster ids to label
+#' @param labels Custom labels for the clusters
+#' @param split.by Split labels by some grouping label, useful when using
+#' \code{\link[ggplot2]{facet_wrap}} or \code{\link[ggplot2]{facet_grid}}
+#' @param repel Use \code{geom_label_repel} to create nicely-repelled labels
+#' @param fill When use \code{geom_label_repel}, set the color of label boxes
+#' @param alpha.box When use \code{geom_label_repel}, set the transparency (0-1) of label boxes
+#' @param alpha.text When use \code{geom_label_repel}, set the transparency (0-1) of label texts
+#' @param ... Extra parameters to \code{\link[ggrepel]{geom_label_repel}} or \code{\link[ggplot2]{geom_text}}, such as \code{size}
+#'
+#' @return A ggplot2-based scatter plot with cluster labels
+#'
+#' @import Seurat
+#'
+#' @importFrom stats median
+#' @importFrom ggrepel geom_label_repel
+#' @importFrom ggplot2 aes_string geom_text
+#' @export
+#'
+#' @seealso \code{\link[ggrepel]{geom_label_repel}} \code{\link[ggplot2]{geom_text}}
+#'
+#' @examples
+#' plot <- DimPlot(object = pbmc_small)
+#' LabelClusters(plot = plot, id = 'ident')
+#'
+LabelClusters <- function(
+  plot,
+  id,
+  clusters = NULL,
+  labels = NULL,
+  split.by = NULL,
+  repel = TRUE,
+  fill = 'white',
+  alpha.box = 0,
+  alpha.text = 1,
+  ...
+) {
+  seed <- sample(0:.Machine$integer.max, size = 1)
+  xynames <- unlist(x = Seurat:::GetXYAesthetics(plot = plot), use.names = TRUE)
+  if (!id %in% colnames(x = plot$data)) {
+    stop("Cannot find variable ", id, " in plotting data")
+  }
+  if (!is.null(x = split.by) && !split.by %in% colnames(x = plot$data)) {
+    warning("Cannot find splitting variable ", id, " in plotting data")
+    split.by <- NULL
+  }
+  data <- plot$data[, c(xynames, id, split.by)]
+  possible.clusters <- as.character(x = na.omit(object = unique(x = data[, id])))
+  groups <- clusters %||% as.character(x = na.omit(object = unique(x = data[, id])))
+  if (any(!groups %in% possible.clusters)) {
+    stop("The following clusters were not found: ", paste(groups[!groups %in% possible.clusters], collapse = ","))
+  }
+  labels.loc <- lapply(
+    X = groups,
+    FUN = function(group) {
+      data.use <- data[data[, id] == group, , drop = FALSE]
+      data.medians <- if (!is.null(x = split.by)) {
+        do.call(
+          what = 'rbind',
+          args = lapply(
+            X = unique(x = data.use[, split.by]),
+            FUN = function(split) {
+              medians <- apply(
+                X = data.use[data.use[, split.by] == split, xynames, drop = FALSE],
+                MARGIN = 2,
+                FUN = median,
+                na.rm = TRUE
+              )
+              medians <- as.data.frame(x = t(x = medians))
+              medians[, split.by] <- split
+              return(medians)
+            }
+          )
+        )
+      } else {
+        as.data.frame(x = t(x = apply(
+          X = data.use[, xynames, drop = FALSE],
+          MARGIN = 2,
+          FUN = median,
+          na.rm = TRUE
+        )))
+      }
+      data.medians[, id] <- group
+      return(data.medians)
+    }
+  )
+  labels.loc <- do.call(what = 'rbind', args = labels.loc)
+  labels <- labels %||% groups
+  if (length(x = unique(x = labels.loc[, id])) != length(x = labels)) {
+    stop("Length of labels (", length(x = labels),  ") must be equal to the number of clusters being labeled (", length(x = labels.loc), ").")
+  }
+  names(x = labels) <- groups
+  for (group in groups) {
+    labels.loc[labels.loc[, id] == group, id] <- labels[group]
+  }
+  if (repel) {
+    plot <- plot +
+      geom_label_repel(
+        data = labels.loc,
+        mapping = aes_string(x = xynames['x'], y = xynames['y'], label = id),
+        label.size = NA,
+        fill = fill,
+        alpha = alpha.box,
+        seed = seed,
+        ...
+      ) +
+      geom_label_repel(
+        data = labels.loc,
+        mapping = aes_string(x = xynames['x'], y = xynames['y'], label = id),
+        label.size = NA,
+        fill = NA,
+        alpha = alpha.text,
+        seed = seed,
+        ...
+      )
+  } else {
+    plot <- plot + geom_text(
+      data = labels.loc,
+      mapping = aes_string(x = xynames['x'], y = xynames['y'], label = id),
+      ...
+    )
+  }
+  return(plot)
+}
+
+
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Internal
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -982,6 +1125,7 @@ DoHeatmap <- function(
 # @param sizes.highlight Size of highlighted cells; will repeat to the length
 # groups in cells.highlight
 # @param na.value Color value for NA points when using custom scale.
+# @param ... Extra parameters to \code{\link{LabelClusters}}
 #
 #' @import Seurat
 #' @importFrom cowplot theme_cowplot
@@ -1013,7 +1157,8 @@ SingleDimPlot <- function(
   legend.title = NULL,
   legend.title.size = NULL,
   legend.text.size = NULL,
-  legend.key.size = 0.5
+  legend.key.size = 0.5,
+  ...
 ) {
   pt.size <- pt.size %||% Seurat:::AutoPointSize(data = data)
   axis.type <- match.arg(arg = axis.type)
@@ -1115,7 +1260,8 @@ SingleDimPlot <- function(
       plot = plot,
       id = col.by,
       repel = repel,
-      size = label.size
+      size = label.size,
+      ...
     )
   }
   if (!is.null(x = cols)) {

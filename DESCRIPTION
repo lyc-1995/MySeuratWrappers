@@ -19,6 +19,7 @@ Imports:
     future,
     future.apply,
     ggplot2,
+    ggrepel,
     ggridges,
     MASS,
     patchwork,

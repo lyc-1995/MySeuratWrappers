@@ -36,7 +36,8 @@ DimPlot(
   legend.text.size = NULL,
   legend.key.size = 0.5,
   ncol = NULL,
-  combine = TRUE
+  combine = TRUE,
+  ...
 )
 }
 \arguments{
@@ -103,6 +104,8 @@ groups in cells.highlight}
 
 \item{combine}{Combine plots into a single \code{\link[patchwork]{patchwork}ed}
 ggplot object. If \code{FALSE}, return a list of ggplot objects}
+
+\item{...}{Extra parameters to \code{\link{LabelClusters}}}
 
 \item{show.legend}{Whether or not to show legend}
 }
