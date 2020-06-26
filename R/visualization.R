@@ -1548,7 +1548,7 @@ ExIPlot <- function(
 #' @importFrom utils globalVariables
 #' @importFrom ggridges geom_density_ridges theme_ridges
 #' @importFrom ggplot2 ggplot aes_string theme labs geom_violin geom_jitter ylim theme_bw facet_grid scale_color_manual
-#' scale_fill_manual scale_y_log10 scale_x_log10 scale_x_discrete scale_y_discrete scale_x_continuous waiver
+#' scale_fill_manual scale_y_log10 scale_x_log10 scale_x_discrete scale_y_discrete scale_x_continuous waiver coord_flip
 #' @importFrom cowplot theme_cowplot
 #'
 SingleExIPlot <- function(
@@ -1669,7 +1669,7 @@ SingleExIPlot <- function(
       xlab <- x.lab
       ylab <- y.lab
       geom <- list(
-        vln.geom(scale = 'width', adjust = adjust, trim = TRUE),
+        vln.geom(scale = 'width', adjust = adjust, trim = TRUE, size = 0.125),
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
       )
       jitter <- geom_jitter(height = 0, size = pt.size)
@@ -1686,7 +1686,7 @@ SingleExIPlot <- function(
       xlab <- y.lab
       ylab <- x.lab
       geom <- list(
-        geom_density_ridges(scale = 4),
+        geom_density_ridges(scale = 4, size = 0.125),
         theme_bw(base_line_size = line.size),
         scale_y_discrete(expand = c(0.01, 0), limits = rev(levels(x = idents))),
         scale_x_continuous(expand = c(0, 0))
@@ -1799,6 +1799,7 @@ SingleExIPlot <- function(
       panel.spacing = unit(0.01, "lines"),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
+      legend.position = 'none'
     )
     plot <- plot + stacked.theme
   }
